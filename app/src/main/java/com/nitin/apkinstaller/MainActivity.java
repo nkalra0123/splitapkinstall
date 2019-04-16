@@ -3,28 +3,43 @@ package com.nitin.apkinstaller;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
+import com.nitin.apkinstaller.adapter.GalleryAdapter;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +49,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     PackageInstaller packageInstaller;
 
+    private GalleryAdapter mAdapter;
+    private RecyclerView recyclerView;
+    private ArrayList<String> splitApkApps;
+
+    HashMap<String, List<String>> packageNameToSplitApksMapping;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +62,33 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        splitApkApps = new ArrayList<>();
+
+        mAdapter = new GalleryAdapter(getApplicationContext(), splitApkApps);
+
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+
+        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
+        recyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.setAdapter(mAdapter);
+
+        packageNameToSplitApksMapping =  new HashMap<>();
+
+
+
+        recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+
+                showDialog(splitApkApps.get(position));
+
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+            }
+        }));
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -49,9 +97,15 @@ public class MainActivity extends AppCompatActivity {
 
                 packageInstaller =  getPackageManager().getPackageInstaller();
 
-                int ret = installApk("/storage/emulated/0/Download/split/");
+                getListOfApksWithSplitInstalled();
+                mAdapter.notifyDataSetChanged();
 
-                Log.d(TAG, "onClick: return value is " + ret);
+
+
+                //int ret = installApk("/storage/emulated/0/Download/split/");
+
+                //Log.d(TAG, "onClick: return value is " + ret);
+                //extractSplits("com.airbnb.android",getListOfApksWithSplitInstalled());
 
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
@@ -65,6 +119,88 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+
+    public void showDialog (final String packageName) {
+
+        new MaterialStyledDialog.Builder(this)
+                .setTitle("Export Split Apks!")
+                .setDescription("Export Split Apks " + packageName)
+                .setPositiveText("Export")
+                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        Log.d("MaterialStyledDialogs", "Do something!");
+
+                        extractSplits(packageName);
+                    }
+                }).show();
+    }
+
+
+    private HashMap<String, List<String>> getListOfApksWithSplitInstalled()
+    {
+
+        PackageManager  pm = getPackageManager();
+        List<PackageInfo> pkginfoList = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES);
+        for(PackageInfo packageInfo : pkginfoList)
+        {
+            if(packageInfo.splitNames != null) {
+                ArrayList<String> splitPublicSourceDirs = new ArrayList<>(Arrays.asList(packageInfo.applicationInfo.splitPublicSourceDirs));
+
+                splitPublicSourceDirs.add(packageInfo.applicationInfo.publicSourceDir);
+
+                packageNameToSplitApksMapping.put(packageInfo.packageName,splitPublicSourceDirs);
+
+                splitApkApps.add(packageInfo.packageName);
+            }
+        }
+
+        Log.d(TAG, "getListOfApksWithSplitInstalled: " + splitApkApps);
+        return packageNameToSplitApksMapping;
+    }
+
+
+    private void extractSplits(String packageName)
+    {
+
+        File myDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Splits");
+        myDirectory.mkdir();
+
+        File apkFolder = new File(myDirectory,packageName);
+        apkFolder.mkdir();
+
+        List<String> splits = packageNameToSplitApksMapping.get(packageName);
+
+        for(String filePath : splits)
+        {
+            File src = new File(filePath);
+            Log.d(TAG, "extractSplits: src " + src);
+
+            File dst = new File(apkFolder,filePath.substring(filePath.lastIndexOf("/")));
+            Log.d(TAG, "extractSplits: dst " + dst);
+
+            try {
+                copy(src,dst);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public static void copy(File src, File dst) throws IOException {
+        try (InputStream in = new FileInputStream(src)) {
+            try (OutputStream out = new FileOutputStream(dst)) {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+        }
     }
 
     @Override
