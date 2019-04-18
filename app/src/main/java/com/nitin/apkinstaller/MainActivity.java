@@ -1,12 +1,14 @@
 package com.nitin.apkinstaller;
 
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Environment;
@@ -24,10 +26,16 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.github.angads25.filepicker.controller.DialogSelectionListener;
+import com.github.angads25.filepicker.model.DialogConfigs;
+import com.github.angads25.filepicker.model.DialogProperties;
+import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.nitin.apkinstaller.adapter.GalleryAdapter;
 
@@ -62,9 +70,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        splitApkApps = new ArrayList<>();
+        Button button1 = findViewById(R.id.button);
 
-        mAdapter = new GalleryAdapter(getApplicationContext(), splitApkApps);
+        splitApkApps = new ArrayList<>();
+        packageNameToSplitApksMapping =  new HashMap<>();
+
+
+        mAdapter = new GalleryAdapter(getApplicationContext(), splitApkApps,packageNameToSplitApksMapping);
 
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
@@ -73,16 +85,21 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(mAdapter);
 
-        packageNameToSplitApksMapping =  new HashMap<>();
 
 
+        button1.setOnClickListener((view)->
+        {
+            button1.setVisibility(View.GONE);
+            packageInstaller =  getPackageManager().getPackageInstaller();
+            getListOfApksWithSplitInstalled();
+            mAdapter.notifyDataSetChanged();
+
+        });
 
         recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
-
                 showDialog(splitApkApps.get(position));
-
             }
 
             @Override
@@ -95,11 +112,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                packageInstaller =  getPackageManager().getPackageInstaller();
 
-                getListOfApksWithSplitInstalled();
-                mAdapter.notifyDataSetChanged();
-
+                installSplitApks();
 
 
                 //int ret = installApk("/storage/emulated/0/Download/split/");
@@ -122,12 +136,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void installSplitApks()
+    {
+        DialogProperties properties = new DialogProperties();
+        properties.selection_mode = DialogConfigs.MULTI_MODE;
+        properties.selection_type = DialogConfigs.FILE_SELECT;
+        properties.root = new File(DialogConfigs.DEFAULT_DIR);
+        properties.error_dir = new File(DialogConfigs.DEFAULT_DIR);
+        properties.offset = new File(DialogConfigs.DEFAULT_DIR);
+        properties.extensions = null;
+
+        FilePickerDialog dialog = new FilePickerDialog(MainActivity.this,properties);
+        dialog.setTitle("Select a File");
+
+        dialog.show();
+
+        dialog.setDialogSelectionListener(new DialogSelectionListener() {
+            @Override
+            public void onSelectedFilePaths(String[] files) {
+                //files is the array of the paths of files selected by the Application User.
+                installApk(files);
+            }
+        });
+
+    }
+
+
     public void showDialog (final String packageName) {
+        Drawable icon = null;
+        try
+        {
+             icon = getPackageManager().getApplicationIcon(packageName);
+        }
+        catch (PackageManager.NameNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+
 
         new MaterialStyledDialog.Builder(this)
                 .setTitle("Export Split Apks!")
-                .setDescription("Export Split Apks " + packageName)
+                .setDescription("export " + packageName)
                 .setPositiveText("Export")
+                .setIcon(icon)
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
@@ -164,7 +215,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void extractSplits(String packageName)
     {
-
         File myDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Splits");
         myDirectory.mkdir();
 
@@ -188,7 +238,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
 
     public static void copy(File src, File dst) throws IOException {
         try (InputStream in = new FileInputStream(src)) {
@@ -222,6 +271,52 @@ public class MainActivity extends AppCompatActivity {
     private static class InstallParams {
         PackageInstaller.SessionParams sessionParams;
     }
+
+
+    public int installApk(String[] files)
+    {
+        HashMap<String, Long> nameSizeMap = new HashMap<>();
+        HashMap<String, String> filenameToPathMap = new HashMap<>();
+        long totalSize = 0;
+        int sessionId = 0;
+
+        try {
+            for (String file : files) {
+                File listOfFile = new File(file);
+                if (listOfFile.isFile()) {
+                    Log.d(TAG, "installApk: " + listOfFile.getName());
+                    nameSizeMap.put(listOfFile.getName(), listOfFile.length());
+                    filenameToPathMap.put(listOfFile.getName(),file);
+                    totalSize += listOfFile.length();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+
+        final InstallParams installParams = makeInstallParams(totalSize);
+
+        try {
+            sessionId = runInstallCreate(installParams);
+
+            for(Map.Entry<String,Long> entry : nameSizeMap.entrySet())
+            {
+                runInstallWrite(entry.getValue(),sessionId, entry.getKey(), filenameToPathMap.get(entry.getKey()));
+            }
+
+            if (doCommitSession(sessionId, false )
+                    != PackageInstaller.STATUS_SUCCESS) {
+            }
+            System.out.println("Success");
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
+        return sessionId;
+    }
+
 
     public int installApk(String apkFolderPath)
     {
@@ -366,7 +461,8 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("install request sent");
 
             Log.d(TAG, "doCommitSession: " + packageInstaller.getMySessions());
-            Log.d(TAG, "doCommitSession: after session commit ");
+            Log.d(TAG,
+                    "doCommitSession: after session commit ");
             return 1;
         } finally {
             session.close();

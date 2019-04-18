@@ -16,6 +16,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
 }
 
 dependencies {
@@ -31,6 +35,9 @@ dependencies {
     //implementation 'com.afollestad.material-dialogs:core:2.7.0'
 
     implementation 'com.github.javiersantos:MaterialStyledDialogs:2.1'
+
+    implementation 'com.github.angads25:filepicker:1.1.1'
+
 
 
 
