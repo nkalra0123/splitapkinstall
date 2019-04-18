@@ -179,6 +179,11 @@ public class MainActivity extends AppCompatActivity {
                 .setDescription("export " + packageName)
                 .setPositiveText("Export")
                 .setIcon(icon)
+                .setNegativeText("Cancel")
+                .onNegative((dialog, which)->
+                {
+                    Log.d(TAG, "showDialog: dismiss" );
+                })
                 .onPositive(new MaterialDialog.SingleButtonCallback() {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
