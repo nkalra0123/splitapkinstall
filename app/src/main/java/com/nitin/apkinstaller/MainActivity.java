@@ -141,18 +141,7 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-
                 installSplitApks();
-
-
-                //int ret = installApk("/storage/emulated/0/Download/split/");
-
-                //Log.d(TAG, "onClick: return value is " + ret);
-                //extractSplits("com.airbnb.android",getListOfApksWithSplitInstalled());
-
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
 
@@ -168,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void installSplitApks()
     {
-
         dialog.setTitle("Select a File");
 
         dialog.show();
@@ -185,10 +173,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void showDialog (final String packageName,Drawable icon) {
-
         new MaterialStyledDialog.Builder(this)
-                .setTitle("Export Split Apks!")
-                .setDescription("export " + packageName)
+                .setTitle("Export Split Apks of " + packageName)
+                .setDescription("Click Export to save splits of " + packageName )
                 .setPositiveText("Export")
                 .setIcon(icon)
                 .setNegativeText("Cancel")
@@ -200,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
                         Log.d("MaterialStyledDialogs", "Do something!");
-
                         extractSplits(packageName);
                     }
                 }).show();
