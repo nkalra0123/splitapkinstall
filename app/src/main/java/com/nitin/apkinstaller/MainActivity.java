@@ -1,5 +1,7 @@
 package com.nitin.apkinstaller;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -10,6 +12,7 @@ import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.RemoteException;
@@ -29,12 +32,14 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
+import com.github.angads25.filepicker.utils.Utility;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.nitin.apkinstaller.adapter.GalleryAdapter;
@@ -53,6 +58,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.angads25.filepicker.view.FilePickerDialog.EXTERNAL_READ_PERMISSION_GRANT;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     PackageInstaller packageInstaller;
@@ -62,6 +69,11 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> splitApkApps;
 
     HashMap<String, List<String>> packageNameToSplitApksMapping;
+
+    FilePickerDialog dialog;
+    String packageToExport = null;
+
+    public static final int EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT = 113;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,17 +92,28 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
+
+        DialogProperties properties = new DialogProperties();
+        properties.selection_mode = DialogConfigs.MULTI_MODE;
+        properties.selection_type = DialogConfigs.FILE_SELECT;
+        properties.root = new File(DialogConfigs.DEFAULT_DIR);
+        properties.error_dir = new File(DialogConfigs.DEFAULT_DIR);
+        properties.offset = new File(DialogConfigs.DEFAULT_DIR);
+        properties.extensions = null;
+
+        dialog = new FilePickerDialog(MainActivity.this,properties);
+
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getApplicationContext(), 1);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(mAdapter);
+        packageInstaller =  getPackageManager().getPackageInstaller();
 
 
 
         button1.setOnClickListener((view)->
         {
             button1.setVisibility(View.GONE);
-            packageInstaller =  getPackageManager().getPackageInstaller();
             getListOfApksWithSplitInstalled();
             mAdapter.notifyDataSetChanged();
 
@@ -99,7 +122,14 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
             @Override
             public void onClick(View view, int position) {
-                showDialog(splitApkApps.get(position));
+                String packageName = splitApkApps.get(position);
+                Drawable icon = null;
+                try {
+                    icon = getPackageManager().getApplicationIcon(packageName);
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+                showDialog(packageName,icon);
             }
 
             @Override
@@ -138,15 +168,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void installSplitApks()
     {
-        DialogProperties properties = new DialogProperties();
-        properties.selection_mode = DialogConfigs.MULTI_MODE;
-        properties.selection_type = DialogConfigs.FILE_SELECT;
-        properties.root = new File(DialogConfigs.DEFAULT_DIR);
-        properties.error_dir = new File(DialogConfigs.DEFAULT_DIR);
-        properties.offset = new File(DialogConfigs.DEFAULT_DIR);
-        properties.extensions = null;
 
-        FilePickerDialog dialog = new FilePickerDialog(MainActivity.this,properties);
         dialog.setTitle("Select a File");
 
         dialog.show();
@@ -162,17 +184,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void showDialog (final String packageName) {
-        Drawable icon = null;
-        try
-        {
-             icon = getPackageManager().getApplicationIcon(packageName);
-        }
-        catch (PackageManager.NameNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-
+    public void showDialog (final String packageName,Drawable icon) {
 
         new MaterialStyledDialog.Builder(this)
                 .setTitle("Export Split Apks!")
@@ -220,6 +232,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void extractSplits(String packageName)
     {
+        if (!Utility.checkStorageAccessPermissions(getApplicationContext())) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ((Activity) MainActivity.this).requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT);
+                packageToExport = packageName;
+                return;
+            }
+        }
+
+
+
         File myDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Splits");
         myDirectory.mkdir();
 
@@ -256,6 +278,39 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
+    //Add this method to show Dialog when the required permission has been granted to the app.
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case EXTERNAL_READ_PERMISSION_GRANT: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (dialog != null) {   //Show dialog if the read permission has been granted.
+                        dialog.show();
+                    }
+                } else {
+                    //Permission has not been granted. Notify the user.
+                    Toast.makeText(MainActivity.this, "Permission is Required for getting list of files", Toast.LENGTH_SHORT).show();
+                }
+            }
+            case EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "onRequestPermissionsResult: ");
+
+                    if(packageToExport != null)
+                        extractSplits(packageToExport);
+                } else {
+                    //Permission has not been granted. Notify the user.
+                    Toast.makeText(MainActivity.this, "Permission is Required for getting list of files", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        }
+    }
+
+
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
