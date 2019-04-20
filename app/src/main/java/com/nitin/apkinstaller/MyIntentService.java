@@ -3,10 +3,12 @@ package com.nitin.apkinstaller;
 import android.Manifest;
 import android.app.Activity;
 import android.app.IntentService;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.github.angads25.filepicker.utils.Utility;
@@ -70,10 +72,24 @@ public class MyIntentService extends IntentService {
      * parameters.
      */
     private void handleActionExtractApk(String param1, HashMap<String, List<String>> packageNameToSplitApksMapping) {
-        // TODO: Handle action Foo
-        extractSplits(param1,packageNameToSplitApksMapping);
-    }
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setContentTitle("Extracting Apk")
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText("Extracing split apk of " + param1 + " in Progress"))
+                        .setContentText("In Progress")
+                        .setSmallIcon(R.drawable.ic_launcher_background);
+        NotificationManager mNotificationManager;
+        mNotificationManager = (NotificationManager)
+                this.getSystemService(Context.NOTIFICATION_SERVICE);
 
+        mNotificationManager.notify(1, mBuilder.build());
+        extractSplits(param1,packageNameToSplitApksMapping);
+        mBuilder.setContentText("Apk extraction Done");
+        mBuilder.setStyle(new NotificationCompat.BigTextStyle().bigText("Extracing split apk of " + param1 + " Done "));
+
+        mNotificationManager.notify(1, mBuilder.build());
+    }
 
     public static void copy(File src, File dst) throws IOException {
         try (InputStream in = new FileInputStream(src)) {
