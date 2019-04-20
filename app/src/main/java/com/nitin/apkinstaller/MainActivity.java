@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         DialogProperties properties = new DialogProperties();
         properties.selection_mode = DialogConfigs.MULTI_MODE;
         properties.selection_type = DialogConfigs.FILE_SELECT;
-        properties.root = new File(DialogConfigs.DEFAULT_DIR);
+        properties.root = new File(Environment.getExternalStorageDirectory().toString());
         properties.error_dir = new File(DialogConfigs.DEFAULT_DIR);
         properties.offset = new File(DialogConfigs.DEFAULT_DIR);
         properties.extensions = null;
@@ -209,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
 
     private HashMap<String, List<String>> getListOfApksWithSplitInstalled()
     {
-
         PackageManager  pm = getPackageManager();
         List<PackageInfo> pkginfoList = pm.getInstalledPackages(PackageManager.GET_ACTIVITIES);
         for(PackageInfo packageInfo : pkginfoList)
@@ -240,43 +239,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        // start service with package name and hashmap
+        Intent intent = new Intent(this, MyIntentService.class);
+        intent.putExtra("map", packageNameToSplitApksMapping);
+        startService(intent);
 
-
-        File myDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Splits");
-        myDirectory.mkdir();
-
-        File apkFolder = new File(myDirectory,packageName);
-        apkFolder.mkdir();
-
-        List<String> splits = packageNameToSplitApksMapping.get(packageName);
-
-        for(String filePath : splits)
-        {
-            File src = new File(filePath);
-            Log.d(TAG, "extractSplits: src " + src);
-
-            File dst = new File(apkFolder,filePath.substring(filePath.lastIndexOf("/")));
-            Log.d(TAG, "extractSplits: dst " + dst);
-
-            try {
-                copy(src,dst);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void copy(File src, File dst) throws IOException {
-        try (InputStream in = new FileInputStream(src)) {
-            try (OutputStream out = new FileOutputStream(dst)) {
-                // Transfer bytes from in to out
-                byte[] buf = new byte[1024];
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-            }
-        }
+        MyIntentService.startActionExtractApk(getApplicationContext(),packageName,packageNameToSplitApksMapping);
     }
 
 
