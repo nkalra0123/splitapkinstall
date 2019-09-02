@@ -2,7 +2,11 @@ package com.nitin.apkinstaller;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
@@ -13,6 +17,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -61,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
     FilePickerDialog dialog;
     String packageToExport = null;
+    public static final boolean isOOrLater = android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
 
     public static final int EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT = 113;
 
@@ -72,6 +78,9 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Button button1 = findViewById(R.id.button);
+
+        if (isOOrLater) createNotificationChannels(getApplicationContext());
+
 
         splitApkApps = new ArrayList<>();
         packageNameToSplitApksMapping =  new HashMap<>();
@@ -158,6 +167,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static void createNotificationChannels(Context appCtx) {
+        try {
+            final NotificationManager notificationManager = (NotificationManager) appCtx.getSystemService(Context.NOTIFICATION_SERVICE);
+            // Notification with sound channel
+            CharSequence name = appCtx.getString(R.string.export_notification);
+            String description = appCtx.getString(R.string.export_notification_description);
+            NotificationChannel channel = new NotificationChannel("export_sound", name, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(description);
+            channel.enableVibration(true);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            notificationManager.createNotificationChannel(channel);
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+
     public void showDialog (final String packageName,Drawable icon) {
         new MaterialStyledDialog.Builder(this)
                 .setTitle("Export Split Apks of " + packageName)
@@ -205,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
     {
         if (!Utility.checkStorageAccessPermissions(getApplicationContext())) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                ((Activity) MainActivity.this).requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT);
+                ((Activity) MainActivity.this).requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXTERNAL_READ_PERMISSION_GRANT_FOR_EXPORT);
                 packageToExport = packageName;
                 return;
             }

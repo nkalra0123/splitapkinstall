@@ -3,11 +3,14 @@ package com.nitin.apkinstaller;
 import android.Manifest;
 import android.app.Activity;
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -67,6 +70,8 @@ public class MyIntentService extends IntentService {
         }
     }
 
+
+
     /**
      * Handle action Foo in the provided background thread with the provided
      * parameters.
@@ -78,6 +83,7 @@ public class MyIntentService extends IntentService {
                         .setStyle(new NotificationCompat.BigTextStyle()
                                 .bigText("Extracing split apk of " + param1 + " in Progress"))
                         .setContentText("In Progress")
+                        .setChannelId("export_sound")
                         .setSmallIcon(R.drawable.ic_launcher_background);
         NotificationManager mNotificationManager;
         mNotificationManager = (NotificationManager)
@@ -106,7 +112,7 @@ public class MyIntentService extends IntentService {
 
     private void extractSplits(String packageName,HashMap<String, List<String>> packageNameToSplitApksMapping)
     {
-        File myDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Splits");
+        File myDirectory = new File(Environment.getExternalStorageDirectory(), "Splits");
         myDirectory.mkdir();
 
         File apkFolder = new File(myDirectory,packageName);

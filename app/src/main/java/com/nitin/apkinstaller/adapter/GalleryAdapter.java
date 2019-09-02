@@ -66,7 +66,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.MyViewHo
 
         holder.packageName.setText(packageName);
 
-        holder.description.setText(packageNameToSplitApksMapping.get(packageName).toString());
+        //holder.description.setText(packageNameToSplitApksMapping.get(packageName).toString());
 
         try
         {
