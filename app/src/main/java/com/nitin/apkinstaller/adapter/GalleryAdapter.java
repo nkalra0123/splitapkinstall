@@ -26,6 +26,8 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.MyViewHo
     private Context mContext;
     private static final String TAG = "GalleryAdapter";
     private ArrayList<String> splitApkApps;
+    private ArrayList<String> splitApkAppsName;
+
     HashMap<String, List<String>> packageNameToSplitApksMapping;
 
 
@@ -39,15 +41,16 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.MyViewHo
             super(view);
             packageName = (TextView) view.findViewById(R.id.title);
             icon = (ImageView) view.findViewById(R.id.imageView);
-            description = view.findViewById(R.id.splitsdescription);
+            description = (TextView) view.findViewById(R.id.name);
         }
     }
 
 
-    public GalleryAdapter(Context context, ArrayList<String> splitApkApps, HashMap<String, List<String>> packageNameToSplitApksMapping) {
+    public GalleryAdapter(Context context, ArrayList<String> splitApkApps, ArrayList<String> splitApkAppsName, HashMap<String, List<String>> packageNameToSplitApksMapping) {
         mContext = context;
         this.splitApkApps = splitApkApps;
         this.packageNameToSplitApksMapping = packageNameToSplitApksMapping;
+        this.splitApkAppsName = splitApkAppsName;
     }
 
     @Override
@@ -63,8 +66,11 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.MyViewHo
 
         Log.d(TAG, "onBindViewHolder: " + splitApkApps.get(position));
         String packageName = splitApkApps.get(position);
+        String name = splitApkAppsName.get(position);
 
         holder.packageName.setText(packageName);
+
+        holder.description.setText(name);
 
         //holder.description.setText(packageNameToSplitApksMapping.get(packageName).toString());
 

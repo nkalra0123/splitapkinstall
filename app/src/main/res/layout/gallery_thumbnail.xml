@@ -24,22 +24,22 @@
             android:layout_marginRight="16dp" />
 
         <TextView
-            android:id="@+id/title"
+            android:id="@+id/name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_toRightOf="@+id/imageView"
-            android:text="Title"
-            android:textSize="30sp" />
+            android:text="Name"
+            android:textSize="20sp" />
 
         <TextView
-            android:id="@+id/splitsdescription"
+            android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/title"
+            android:layout_below="@+id/name"
             android:layout_toRightOf="@+id/imageView"
-            android:text="Description"
-            android:textSize="30sp" />
+            android:text="PackageName"
+            android:textSize="20sp" />
 
     </RelativeLayout>
 

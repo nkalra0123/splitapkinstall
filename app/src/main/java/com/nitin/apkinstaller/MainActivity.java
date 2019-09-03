@@ -28,7 +28,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
@@ -61,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private GalleryAdapter mAdapter;
     private RecyclerView recyclerView;
     private ArrayList<String> splitApkApps;
+    private ArrayList<String> splitApkAppsName;
 
     HashMap<String, List<String>> packageNameToSplitApksMapping;
 
@@ -77,16 +77,15 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Button button1 = findViewById(R.id.button);
-
         if (isOOrLater) createNotificationChannels(getApplicationContext());
 
 
         splitApkApps = new ArrayList<>();
+        splitApkAppsName = new ArrayList<>();
         packageNameToSplitApksMapping =  new HashMap<>();
 
 
-        mAdapter = new GalleryAdapter(getApplicationContext(), splitApkApps,packageNameToSplitApksMapping);
+        mAdapter = new GalleryAdapter(getApplicationContext(), splitApkApps,splitApkAppsName,packageNameToSplitApksMapping);
 
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
@@ -106,13 +105,9 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(mAdapter);
         packageInstaller =  getPackageManager().getPackageInstaller();
 
-        button1.setOnClickListener((view)->
-        {
-            button1.setVisibility(View.GONE);
-            getListOfApksWithSplitInstalled();
-            mAdapter.notifyDataSetChanged();
 
-        });
+        getListOfApksWithSplitInstalled();
+        mAdapter.notifyDataSetChanged();
 
         recyclerView.addOnItemTouchListener(new GalleryAdapter.RecyclerTouchListener(getApplicationContext(), recyclerView, new GalleryAdapter.ClickListener() {
             @Override
@@ -133,13 +128,7 @@ public class MainActivity extends AppCompatActivity {
         }));
 
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                installSplitApks();
-            }
-        });
-
+        fab.setOnClickListener(view -> installSplitApks());
         }
 
     @Override
@@ -221,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
                 packageNameToSplitApksMapping.put(packageInfo.packageName,splitPublicSourceDirs);
 
                 splitApkApps.add(packageInfo.packageName);
+                splitApkAppsName.add(pm.getApplicationLabel(packageInfo.applicationInfo).toString());
             }
         }
 
