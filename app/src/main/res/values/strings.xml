@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Split App Installer</string>
     <string name="action_settings">Settings</string>
 
     <string name="export_notification">Exporting Split Apks</string>
