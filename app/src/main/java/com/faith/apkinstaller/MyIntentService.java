@@ -1,20 +1,12 @@
-package com.nitin.apkinstaller;
+package com.faith.apkinstaller;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.IntentService;
-import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.Context;
-import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-
-import com.github.angads25.filepicker.utils.Utility;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,10 +25,10 @@ import java.util.List;
  */
 public class MyIntentService extends IntentService {
     private static final String TAG = "MyIntentService";
-    private static final String ACTION_EXPORT_APK = "com.nitin.apkinstaller.action.EXPORT_APK";
+    private static final String ACTION_EXPORT_APK = "com.faith.apkinstaller.action.EXPORT_APK";
 
-    private static final String PACKAGENAME = "com.nitin.apkinstaller.extra.PACKAGENAME";
-    private static final String PACKAGE_NAME_TO_SPLIT_APKS_MAPPING = "com.nitin.apkinstaller.extra.PACKAGE_NAME_TO_SPLIT_APKS_MAPPING";
+    private static final String PACKAGENAME = "com.faith.apkinstaller.extra.PACKAGENAME";
+    private static final String PACKAGE_NAME_TO_SPLIT_APKS_MAPPING = "com.faith.apkinstaller.extra.PACKAGE_NAME_TO_SPLIT_APKS_MAPPING";
 
     public MyIntentService() {
         super("MyIntentService");

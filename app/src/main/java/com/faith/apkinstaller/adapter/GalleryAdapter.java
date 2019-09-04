@@ -1,4 +1,4 @@
-package com.nitin.apkinstaller.adapter;
+package com.faith.apkinstaller.adapter;
 
 
 import android.content.Context;
@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.nitin.apkinstaller.R;
+import com.faith.apkinstaller.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;

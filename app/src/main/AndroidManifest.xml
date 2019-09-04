@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.nitin.apkinstaller">
+    package="com.faith.apkinstaller">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -17,11 +17,11 @@
         android:theme="@style/AppTheme"
         tools:replace="android:appComponentFactory">
         <service
-            android:name=".MyIntentService"
+            android:name="com.faith.apkinstaller.MyIntentService"
             android:exported="false"></service>
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.faith.apkinstaller.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -31,7 +31,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".APKInstallService" />
+        <service android:name="com.faith.apkinstaller.APKInstallService" />
     </application>
 
 </manifest>

@@ -1,4 +1,4 @@
-package com.nitin.apkinstaller;
+package com.faith.apkinstaller;
 
 import org.junit.Test;
 

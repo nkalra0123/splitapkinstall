@@ -1,4 +1,4 @@
-package com.nitin.apkinstaller;
+package com.faith.apkinstaller;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.nitin.apkinstaller", appContext.getPackageName());
+        assertEquals("com.faith.apkinstaller", appContext.getPackageName());
     }
 }

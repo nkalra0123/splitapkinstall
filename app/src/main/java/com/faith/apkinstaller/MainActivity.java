@@ -1,4 +1,4 @@
-package com.nitin.apkinstaller;
+package com.faith.apkinstaller;
 
 import android.Manifest;
 import android.app.Activity;
@@ -38,7 +38,7 @@ import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.utils.Utility;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
-import com.nitin.apkinstaller.adapter.GalleryAdapter;
+import com.faith.apkinstaller.adapter.GalleryAdapter;
 
 import java.io.File;
 import java.io.FileInputStream;
